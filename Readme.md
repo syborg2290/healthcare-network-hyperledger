@@ -1,0 +1,1 @@
+Start up docker composer -  docker-compose -f ./docker/compose-ca.yaml up -d
