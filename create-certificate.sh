@@ -413,6 +413,137 @@ certificatesForPharmacy() {
 }
 
 certificatesForInsProvider() {
+
+
+    echo
+    echo "Enroll the CA admin"
+    echo
+    mkdir -p consortium/crypto-config/peerOrganizations/insProvider/
+    export FABRIC_CA_CLIENT_HOME=${PWD}/consortium/crypto-config/peerOrganizations/insProvider/
+
+    # To go back the previous folder
+    # echo "${PWD%/[^/]*}"
+
+    fabric-ca-client enroll -u http://admin:adminpw@localhost:1040 --caname ca.insProvider --tls.certfiles ${PWD}/consortium/fabric-ca/insProvider/tls-cert.pem
+
+    # create a config.yaml file to enable the OU identifiers,
+    # and keep the OU identifiers for each type of entity.
+    # They are peer, orderer, client and admin.
+    echo 'NodeOUs:
+    Enable: true
+    ClientOUIdentifier:
+        Certificate: cacerts/localhost-1040-ca-insProvider.pem
+        OrganizationalUnitIdentifier: client
+    PeerOUIdentifier:
+        Certificate: cacerts/localhost-1040-ca-insProvider.pem
+        OrganizationalUnitIdentifier: peer
+    AdminOUIdentifier:
+        Certificate: cacerts/localhost-1040-ca-insProvider.pem
+        OrganizationalUnitIdentifier: admin
+    OrdererOUIdentifier:
+        Certificate: cacerts/localhost-1040-ca-insProvider.pem
+        OrganizationalUnitIdentifier: orderer' >${PWD}/consortium/crypto-config/peerOrganizations/insProvider/msp/config.yaml            
+    
+    echo
+    echo "Register peer0"
+    echo 
+    fabric-ca-client register --caname ca.insProvider --id.name peer0 --id.secret peer0pw --id.type peer --tls.certifiles ${PWD}/consortium/fabric-ca/insProvider/tls-cert.pem
+
+    echo
+    echo "Register peer1"
+    echo 
+    fabric-ca-client register --caname ca.insProvider --id.name peer1 --id.secret peer1pw --id.type peer --tls.certifiles ${PWD}/consortium/fabric-ca/insProvider/tls-cert.pem
+
+    echo
+    echo "Register user"
+    echo 
+    fabric-ca-client register --caname ca.insProvider --id.name user1 --id.secret user1pw --id.type client --tls.certifiles ${PWD}/consortium/fabric-ca/insProvider/tls-cert.pem
+
+    echo
+    echo "Register the org admin"
+    echo 
+    fabric-ca-client register --caname ca.insProvider --id.name insProvideradmin --id.secret insProvideradminpw --id.type admin --tls.certifiles ${PWD}/consortium/fabric-ca/insProvider/tls-cert.pem
+
+
+    # Create a directory for peers
+    mkdir -p consortium/crypto-config/peerOrganizations/insProvider/peers
+
+    #################################################################################################
+    # peer 0
+    mkdir -p consortium/crypto-config/peerOrganizations/insProvider/peers/peer0.insProvider
+
+    echo
+    echo "## Generate the peer0 msp"
+    echo
+    fabric-ca-client enroll -u https://peer0:peer0pw@localhost:1040 --caname ca.insProvider -M ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/peers/peer0.insProvider/msp --csr.hosts peer0.insProvider --tls.certfiles ${PWD}/consortium/fabric-ca/insProvider/tls-cert.pem
+
+    cp ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/msp/config.yaml ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/peers/peer0.insProvider/msp/config.yaml   
+
+
+    echo
+    echo "## Generate the peer0-tls certificates"
+    echo
+    fabric-ca-client enroll -u https://peer0:peer0pw@localhost:1040 --caname ca.insProvider -M ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/peers/peer0.insProvider/tls --enrollment.profile tls --csr.hosts peer0.insProvider --tls.certfiles ${PWD}/consortium/fabric-ca/insProvider/tls-cert.pem
+
+    cp ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/peers/peer0.insProvider/tls/tlscacerts/* ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/peers/peer0.insProvider/tls/ca.crt
+    cp ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/peers/peer0.insProvider/tls/signcerts/* ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/peers/peer0.insProvider/tls/server.crt   
+    cp ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/peers/peer0.insProvider/tls/keystore/* ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/peers/peer0.insProvider/tls/server.key
+
+    mkdir ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/msp/tlscacerts
+    cp ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/peers/peer0.insProvider/tls/tlscacerts/* ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/msp/tlscacerts/ca.crt
+
+    mkdir ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/msp/tlsca
+    cp ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/peers/peer0.insProvider/tls/tlscacerts/* ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/tlsca/tlsca.insProvider-cert.pem
+
+    mkdir ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/ca
+    cp ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/peers/peer0.insProvider/msp/cacerts/* ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/ca/ca.insProvider-cert.pem
+    cp ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/msp/keystore/* ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/ca/
+
+    ####################################################################################################################
+
+    # peer1 
+
+    mkdir -p consortium/crypto-config/peerOrganizations/insProvider/peers/peer1.insProvider
+
+    echo
+    echo "## Generate the peer1 msp"
+    echo
+    fabric-ca-client enroll -u https://peer1:peer1pw@localhost:1040 --caname ca.insProvider -M ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/peers/peer1.insProvider/msp --csr.hosts peer1.insProvider --tls.certfiles ${PWD}/consortium/fabric-ca/insProvider/tls-cert.pem
+
+    cp ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/msp/config.yaml ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/peers/peer1.insProvider/msp/config.yaml   
+
+
+    echo
+    echo "## Generate the peer1-tls certificates"
+    echo
+    fabric-ca-client enroll -u https://peer1:peer1pw@localhost:1040 --caname ca.insProvider -M ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/peers/peer1.insProvider/tls --enrollment.profile tls --csr.hosts peer1.insProvider --tls.certfiles ${PWD}/consortium/fabric-ca/insProvider/tls-cert.pem
+
+    cp ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/peers/peer1.insProvider/tls/tlscacerts/* ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/peers/peer1.insProvider/tls/ca.crt
+    cp ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/peers/peer1.insProvider/tls/signcerts/* ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/peers/peer1.insProvider/tls/server.crt   
+    cp ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/peers/peer1.insProvider/tls/keystore/* ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/peers/peer1.insProvider/tls/server.key
+
+
+    #########################################################################################################################################
+
+
+    mkdir -p consortium/crypto-config/peerOrganizations/insProvider/users
+    mkdir -p consortium/crypto-config/peerOrganizations/insProvider/users/User1
+
+    echo
+    echo "## Generate the user msp"
+    echo
+    fabric-ca-client enroll -u https://user1:user1pw@localhost:1040 --caname ca.insProvider -M ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/users/User1/msp --tls.certfiles ${PWD}/consortium/fabric-ca/insProvider/tls-cert.pem
+
+
+    mkdir -p consortium/crypto-config/peerOrganizations/insProvider/users/Admin@insProvider
+
+    echo
+    echo "## Generate the org admin msp"
+    echo
+    fabric-ca-client enroll -u https://admin:adminpw@localhost:1040 --caname ca.insProvider -M ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/users/Admin@insProvider/msp --tls.certfiles ${PWD}/consortium/fabric-ca/insProvider/tls-cert.pem
+
+    cp ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/msp/config.yaml ${PWD}/consortium/crypto-config/peerOrganizations/insProvider/users/Admin@insProvider/msp/config.yaml   
+
     
 }
 
