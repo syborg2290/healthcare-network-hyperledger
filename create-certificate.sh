@@ -143,6 +143,137 @@ certificatesForHospital() {
 }
 
 certificatesForLaboratory() {
+
+    echo
+    echo "Enroll the CA admin"
+    echo
+    mkdir -p consortium/crypto-config/peerOrganizations/laboratory/
+    export FABRIC_CA_CLIENT_HOME=${PWD}/consortium/crypto-config/peerOrganizations/laboratory/
+
+    # To go back the previous folder
+    # echo "${PWD%/[^/]*}"
+
+    fabric-ca-client enroll -u http://admin:adminpw@localhost:1020 --caname ca.laboratory --tls.certfiles ${PWD}/consortium/fabric-ca/laboratory/tls-cert.pem
+
+    # create a config.yaml file to enable the OU identifiers,
+    # and keep the OU identifiers for each type of entity.
+    # They are peer, orderer, client and admin.
+    echo 'NodeOUs:
+    Enable: true
+    ClientOUIdentifier:
+        Certificate: cacerts/localhost-1020-ca-laboratory.pem
+        OrganizationalUnitIdentifier: client
+    PeerOUIdentifier:
+        Certificate: cacerts/localhost-1020-ca-laboratory.pem
+        OrganizationalUnitIdentifier: peer
+    AdminOUIdentifier:
+        Certificate: cacerts/localhost-1020-ca-laboratory.pem
+        OrganizationalUnitIdentifier: admin
+    OrdererOUIdentifier:
+        Certificate: cacerts/localhost-1020-ca-laboratory.pem
+        OrganizationalUnitIdentifier: orderer' >${PWD}/consortium/crypto-config/peerOrganizations/laboratory/msp/config.yaml            
+    
+    echo
+    echo "Register peer0"
+    echo 
+    fabric-ca-client register --caname ca.laboratory --id.name peer0 --id.secret peer0pw --id.type peer --tls.certifiles ${PWD}/consortium/fabric-ca/laboratory/tls-cert.pem
+
+    echo
+    echo "Register peer1"
+    echo 
+    fabric-ca-client register --caname ca.laboratory --id.name peer1 --id.secret peer1pw --id.type peer --tls.certifiles ${PWD}/consortium/fabric-ca/laboratory/tls-cert.pem
+
+    echo
+    echo "Register user"
+    echo 
+    fabric-ca-client register --caname ca.laboratory --id.name user1 --id.secret user1pw --id.type client --tls.certifiles ${PWD}/consortium/fabric-ca/laboratory/tls-cert.pem
+
+    echo
+    echo "Register the org admin"
+    echo 
+    fabric-ca-client register --caname ca.laboratory --id.name laboratoryadmin --id.secret laboratoryadminpw --id.type admin --tls.certifiles ${PWD}/consortium/fabric-ca/laboratory/tls-cert.pem
+
+
+    # Create a directory for peers
+    mkdir -p consortium/crypto-config/peerOrganizations/laboratory/peers
+
+    #################################################################################################
+    # peer 0
+    mkdir -p consortium/crypto-config/peerOrganizations/laboratory/peers/peer0.laboratory
+
+    echo
+    echo "## Generate the peer0 msp"
+    echo
+    fabric-ca-client enroll -u https://peer0:peer0pw@localhost:1020 --caname ca.laboratory -M ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/peers/peer0.laboratory/msp --csr.hosts peer0.laboratory --tls.certfiles ${PWD}/consortium/fabric-ca/laboratory/tls-cert.pem
+
+    cp ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/msp/config.yaml ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/peers/peer0.laboratory/msp/config.yaml   
+
+
+    echo
+    echo "## Generate the peer0-tls certificates"
+    echo
+    fabric-ca-client enroll -u https://peer0:peer0pw@localhost:1020 --caname ca.laboratory -M ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/peers/peer0.laboratory/tls --enrollment.profile tls --csr.hosts peer0.laboratory --tls.certfiles ${PWD}/consortium/fabric-ca/laboratory/tls-cert.pem
+
+    cp ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/peers/peer0.laboratory/tls/tlscacerts/* ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/peers/peer0.laboratory/tls/ca.crt
+    cp ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/peers/peer0.laboratory/tls/signcerts/* ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/peers/peer0.laboratory/tls/server.crt   
+    cp ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/peers/peer0.laboratory/tls/keystore/* ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/peers/peer0.laboratory/tls/server.key
+
+    mkdir ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/msp/tlscacerts
+    cp ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/peers/peer0.laboratory/tls/tlscacerts/* ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/msp/tlscacerts/ca.crt
+
+    mkdir ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/msp/tlsca
+    cp ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/peers/peer0.laboratory/tls/tlscacerts/* ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/tlsca/tlsca.laboratory-cert.pem
+
+    mkdir ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/ca
+    cp ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/peers/peer0.laboratory/msp/cacerts/* ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/ca/ca.laboratory-cert.pem
+    cp ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/msp/keystore/* ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/ca/
+
+    ####################################################################################################################
+
+    # peer1 
+
+    mkdir -p consortium/crypto-config/peerOrganizations/laboratory/peers/peer1.laboratory
+
+    echo
+    echo "## Generate the peer1 msp"
+    echo
+    fabric-ca-client enroll -u https://peer1:peer1pw@localhost:1020 --caname ca.laboratory -M ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/peers/peer1.laboratory/msp --csr.hosts peer1.laboratory --tls.certfiles ${PWD}/consortium/fabric-ca/laboratory/tls-cert.pem
+
+    cp ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/msp/config.yaml ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/peers/peer1.laboratory/msp/config.yaml   
+
+
+    echo
+    echo "## Generate the peer1-tls certificates"
+    echo
+    fabric-ca-client enroll -u https://peer1:peer1pw@localhost:1020 --caname ca.laboratory -M ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/peers/peer1.laboratory/tls --enrollment.profile tls --csr.hosts peer1.laboratory --tls.certfiles ${PWD}/consortium/fabric-ca/laboratory/tls-cert.pem
+
+    cp ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/peers/peer1.laboratory/tls/tlscacerts/* ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/peers/peer1.laboratory/tls/ca.crt
+    cp ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/peers/peer1.laboratory/tls/signcerts/* ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/peers/peer1.laboratory/tls/server.crt   
+    cp ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/peers/peer1.laboratory/tls/keystore/* ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/peers/peer1.laboratory/tls/server.key
+
+
+    #########################################################################################################################################
+
+
+    mkdir -p consortium/crypto-config/peerOrganizations/laboratory/users
+    mkdir -p consortium/crypto-config/peerOrganizations/laboratory/users/User1
+
+    echo
+    echo "## Generate the user msp"
+    echo
+    fabric-ca-client enroll -u https://user1:user1pw@localhost:1020 --caname ca.laboratory -M ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/users/User1/msp --tls.certfiles ${PWD}/consortium/fabric-ca/laboratory/tls-cert.pem
+
+
+    mkdir -p consortium/crypto-config/peerOrganizations/laboratory/users/Admin@laboratory
+
+    echo
+    echo "## Generate the org admin msp"
+    echo
+    fabric-ca-client enroll -u https://admin:adminpw@localhost:1020 --caname ca.laboratory -M ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/users/Admin@laboratory/msp --tls.certfiles ${PWD}/consortium/fabric-ca/laboratory/tls-cert.pem
+
+    cp ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/msp/config.yaml ${PWD}/consortium/crypto-config/peerOrganizations/laboratory/users/Admin@laboratory/msp/config.yaml   
+
+
     
 }
 
