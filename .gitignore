@@ -1,3 +1,4 @@
 *.tar.gz
 log.txt
 /consortium/fabric-ca
+/consortium/crypto-config
